@@ -6802,10 +6802,13 @@ func (c *Coordinator) renderSessionWidget(width int) string {
 		sessionName = truncated + "~"
 	}
 
-	if icons.Session != "" {
-		parts = append(parts, sessionStyle.Render(icons.Session+" "+sessionName))
-	} else {
-		parts = append(parts, sessionStyle.Render(sessionName))
+	showSession := sessionCfg.ShowSession == nil || *sessionCfg.ShowSession
+	if showSession {
+		if icons.Session != "" {
+			parts = append(parts, sessionStyle.Render(icons.Session+" "+sessionName))
+		} else {
+			parts = append(parts, sessionStyle.Render(sessionName))
+		}
 	}
 
 	if sessionCfg.ShowClients && c.sessionClients > 0 {
@@ -6833,6 +6836,35 @@ func (c *Coordinator) renderSessionWidget(width int) string {
 	}
 
 	result.WriteString(strings.Join(parts, " ") + "\n")
+
+	if sessionCfg.ShowKubeContext {
+		kubeIcon := sessionCfg.KubeIcon
+		if kubeIcon == "" {
+			kubeIcon = "⎈"
+		}
+		kubeCtx := ""
+		if out, err := exec.Command("kubectl", "config", "current-context").Output(); err == nil {
+			kubeCtx = strings.TrimSpace(string(out))
+		}
+		if kubeCtx != "" {
+			kubeStyle := lipgloss.NewStyle()
+			if sessFg != "" {
+				kubeStyle = kubeStyle.Foreground(lipgloss.Color(sessFg))
+			}
+			kubeText := kubeIcon + " " + kubeCtx
+			if lipgloss.Width(kubeText) > width {
+				truncated := ""
+				for _, r := range kubeCtx {
+					if lipgloss.Width(kubeIcon+" "+truncated+string(r)) > width-1 {
+						break
+					}
+					truncated += string(r)
+				}
+				kubeText = kubeIcon + " " + truncated + "~"
+			}
+			result.WriteString(kubeStyle.Render(kubeText) + "\n")
+		}
+	}
 
 	for i := 0; i < sessionCfg.PaddingBot; i++ {
 		result.WriteString("\n")

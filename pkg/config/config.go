@@ -98,8 +98,11 @@ type ClaudeWidget struct {
 type SessionWidget struct {
 	Enabled         bool   `yaml:"enabled"`
 	Style           string `yaml:"style"`          // nerd | emoji | ascii | minimal
+	ShowSession     *bool  `yaml:"show_session"`   // Show session name (default: true)
 	ShowClients     bool   `yaml:"show_clients"`   // Show connected clients count
 	ShowWindowCount bool   `yaml:"show_windows"`   // Show window count
+	ShowKubeContext bool   `yaml:"show_kube_context"` // Show current kubectl context
+	KubeIcon        string `yaml:"kube_icon"`      // Icon for kube context (default: "⎈")
 	Position        string `yaml:"position"`       // top | bottom
 	Pin             bool   `yaml:"pin"`            // Pin to position
 	Priority        int    `yaml:"priority"`       // Order among widgets
