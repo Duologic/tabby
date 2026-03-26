@@ -5153,14 +5153,18 @@ func (c *Coordinator) generateMainContent(clientID string, width, height int) (s
 		treeConnectorChar = "─"
 	}
 
-	// Disclosure icons
+	// Disclosure icons ("none" hides them entirely)
 	expandedIcon := c.config.Sidebar.Colors.DisclosureExpanded
 	if expandedIcon == "" {
 		expandedIcon = "⊟"
+	} else if strings.EqualFold(expandedIcon, "none") {
+		expandedIcon = ""
 	}
 	collapsedIcon := c.config.Sidebar.Colors.DisclosureCollapsed
 	if collapsedIcon == "" {
 		collapsedIcon = "⊞"
+	} else if strings.EqualFold(collapsedIcon, "none") {
+		collapsedIcon = ""
 	}
 
 	// Tree color
@@ -6076,9 +6080,9 @@ func (c *Coordinator) generatePrefixModeContent(clientID string, width, height i
 		}
 
 		// Calculate widths
-		prefixWidth := 2 // indicator + space
-		if hasPanes {
-			prefixWidth += 2 // collapse icon + space
+		prefixWidth := 2 // indicator + indicator/space
+		if hasPanes && windowCollapseIcon != "" {
+			prefixWidth += 1 // collapse icon
 		}
 		windowContentWidth := width - prefixWidth
 
@@ -6103,7 +6107,7 @@ func (c *Coordinator) generatePrefixModeContent(clientID string, width, height i
 
 		// Render window line
 		{
-			windowLineStyle := lipgloss.NewStyle().Width(width)
+			windowLineStyle := lipgloss.NewStyle().Width(width).MaxWidth(width)
 			effectiveBg := bgColor
 			if effectiveBg == "" {
 				effectiveBg = theme.Bg
@@ -6111,7 +6115,7 @@ func (c *Coordinator) generatePrefixModeContent(clientID string, width, height i
 
 			var lineContent string
 			if hasPanes {
-				lineContent = indicatorPart + " " + windowCollapseStyle.Render(windowCollapseIcon+" ") + style.Render(contentText)
+				lineContent = indicatorPart + windowCollapseStyle.Render(windowCollapseIcon) + style.Render(contentText)
 			} else if isActive {
 				var indicatorBg, indicatorFg string
 				if activeIndBgConf == "" || activeIndBgConf == "auto" {
@@ -6134,9 +6138,9 @@ func (c *Coordinator) generatePrefixModeContent(clientID string, width, height i
 				}
 
 				activeIndStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(indicatorFg)).Bold(true)
-				lineContent = indicatorPart + " " + activeIndStyle.Render(c.getAnimatedActiveIndicator(activeIndicator)) + style.Render(contentText)
+				lineContent = indicatorPart + activeIndStyle.Render(c.getAnimatedActiveIndicator(activeIndicator)) + style.Render(contentText)
 			} else {
-				lineContent = indicatorPart + "  " + style.Render(contentText)
+				lineContent = indicatorPart + " " + style.Render(contentText)
 			}
 			renderedLine := windowLineStyle.Render(lineContent)
 			if effectiveBg != "" {
@@ -6224,16 +6228,15 @@ func (c *Coordinator) generatePrefixModeContent(clientID string, width, height i
 					}
 				}
 
-				paneNum := fmt.Sprintf("%d.%d", visualNum, pane.Index)
 				paneLabel := pane.Command
 				if pane.LockedTitle != "" {
 					paneLabel = pane.LockedTitle
 				} else if pane.Title != "" && pane.Title != pane.Command {
 					paneLabel = pane.Title
 				}
-				paneText := fmt.Sprintf("%s %s", paneNum, paneLabel)
+				paneText := paneLabel
 
-				paneIndentWidth := 5 // " " + space + branch + connector + connector
+				paneIndentWidth := 5 // lead(1) + space(1) + branch(1) + connector(1) + connector/indicator(1)
 				paneContentWidth := width - paneIndentWidth
 
 				// Truncate
@@ -6289,7 +6292,7 @@ func (c *Coordinator) generatePrefixModeContent(clientID string, width, height i
 				} else {
 					paneLineBg = theme.Bg
 				}
-				paneLineStyle := lipgloss.NewStyle().Background(lipgloss.Color(paneLineBg)).Width(width)
+				paneLineStyle := lipgloss.NewStyle().Background(lipgloss.Color(paneLineBg)).Width(width).MaxWidth(width)
 
 				if pane.Active && isActive {
 					var paneIndicatorBg, paneIndicatorFg string
@@ -6312,15 +6315,15 @@ func (c *Coordinator) generatePrefixModeContent(clientID string, width, height i
 						paneIndicatorFg = activeIndFgConf
 					}
 					paneIndStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(paneIndicatorFg)).Bold(true)
-					fullWidthPaneStyle := activePaneStyle.Width(paneContentWidth)
-					lineContent := paneLeadChar + "  " + treeStyle.Render(paneBranchChar+treeConnectorChar) + paneIndStyle.Render(c.getAnimatedActiveIndicator(paneActiveIndicator)) + fullWidthPaneStyle.Render(paneText)
+					fullWidthPaneStyle := activePaneStyle.Width(paneContentWidth).MaxWidth(paneContentWidth)
+					lineContent := paneLeadChar + " " + treeStyle.Render(paneBranchChar+treeConnectorChar) + paneIndStyle.Render(c.getAnimatedActiveIndicator(paneActiveIndicator)) + fullWidthPaneStyle.Render(paneText)
 					renderedPane := paneLineStyle.Render(lineContent)
 					if paneLineBg != "" {
 						renderedPane = c.applyBackgroundFill(renderedPane, paneLineBg, width)
 					}
 					s.WriteString(renderedPane + "\n")
 				} else {
-					lineContent := paneLeadChar + "  " + treeStyle.Render(paneBranchChar+treeConnectorChar+treeConnectorChar) + paneStyle.Render(paneText)
+					lineContent := paneLeadChar + " " + treeStyle.Render(paneBranchChar+treeConnectorChar+treeConnectorChar) + paneStyle.Render(paneText)
 					renderedPane := paneLineStyle.Render(lineContent)
 					if paneLineBg != "" {
 						renderedPane = c.applyBackgroundFill(renderedPane, paneLineBg, width)
