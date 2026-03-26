@@ -6237,8 +6237,6 @@ func (c *Coordinator) generatePrefixModeContent(clientID string, width, height i
 				paneLabel := pane.Command
 				if pane.LockedTitle != "" {
 					paneLabel = pane.LockedTitle
-				} else if pane.Title != "" && pane.Title != pane.Command {
-					paneLabel = pane.Title
 				}
 				paneText := paneLabel
 
