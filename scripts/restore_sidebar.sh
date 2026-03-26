@@ -28,7 +28,10 @@ restart_daemon_if_unresponsive() {
         return
     fi
 
-    LAST_SIZE=$(stat -f %z "$DAEMON_EVENTS_LOG" 2>/dev/null || echo "")
+    # Use portable file size: GNU stat uses -c %s, BSD/macOS uses -f %z
+    _filesize() { stat -c %s "$1" 2>/dev/null || stat -f %z "$1" 2>/dev/null || echo ""; }
+
+    LAST_SIZE=$(_filesize "$DAEMON_EVENTS_LOG")
     if [ -z "$LAST_SIZE" ]; then
         return
     fi
@@ -37,7 +40,7 @@ restart_daemon_if_unresponsive() {
     NEW_SIZE=""
     for _ in $(seq 1 10); do
         sleep 0.1
-        NEW_SIZE=$(stat -f %z "$DAEMON_EVENTS_LOG" 2>/dev/null || echo "")
+        NEW_SIZE=$(_filesize "$DAEMON_EVENTS_LOG")
         if [ -n "$NEW_SIZE" ] && [ "$NEW_SIZE" -gt "$LAST_SIZE" ]; then
             return
         fi
