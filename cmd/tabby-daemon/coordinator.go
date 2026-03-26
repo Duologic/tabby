@@ -5005,6 +5005,12 @@ func (c *Coordinator) generateSidebarHeader(width int, clientID string) (string,
 
 	hdr := c.config.Sidebar.Header
 	headerText := hdr.Text
+
+	// "none" hides the header entirely
+	if strings.EqualFold(headerText, "none") {
+		return "", nil
+	}
+
 	headerHeight := hdr.Height
 	paddingBottom := hdr.PaddingBottom
 	centered := headerBoolDefault(hdr.Centered)
